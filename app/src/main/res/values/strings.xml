@@ -1,0 +1,18 @@
+<resources>
+    <string name="app_name">kakadou</string>
+    <string name="action_home">主页</string>
+    <string name="action_refresh">刷新</string>
+    <string name="action_privacy">说明</string>
+    <string name="action_clear">清除会话</string>
+    <string name="action_exit">退出</string>
+    <string name="loading">正在打开官方网页…</string>
+    <string name="remote_hint">方向键滚动 · 确认键播放/暂停 · 菜单键打开控制栏 · 返回键退出全屏</string>
+    <string name="privacy_title">关于登录与隐私</string>
+    <string name="privacy_body">本应用通过系统 WebView 打开官方网页。登录由网页自行处理；应用不会读取、显示或上传你的 Cookie、账号或密码。系统 WebView 可在本机保存网页会话，你可随时使用“清除会话”删除本机 Cookie、缓存与历史记录。</string>
+    <string name="clear_session_title">清除本机会话？</string>
+    <string name="clear_session_body">这会删除本设备中由本应用 WebView 保存的网页 Cookie、缓存和访问历史。网页将重新打开，可能需要再次登录。</string>
+    <string name="clear_session_action">清除并重新打开</string>
+    <string name="session_cleared">本机会话已清除</string>
+    <string name="load_error">网页加载失败。请检查网络后按“刷新”重试。</string>
+    <string name="exit_hint">再按一次返回键退出，或在控制栏选择“退出”</string>
+</resources>

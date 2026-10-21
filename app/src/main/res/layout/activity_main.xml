@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/root_layout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#000000">
+
+    <!-- 原生播放器：保持视频比例居中显示（竖屏视频在横屏电视上两侧留黑边） -->
+    <VideoView
+        android:id="@+id/video_view"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center" />
+
+    <!-- 顶部信息条：标题 / 作者 / 序号 -->
+    <LinearLayout
+        android:id="@+id/info_bar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingLeft="24dp"
+        android:paddingTop="18dp"
+        android:paddingRight="24dp"
+        android:paddingBottom="12dp"
+        android:background="#A0000000"
+        android:visibility="gone">
+
+        <TextView
+            android:id="@+id/video_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="#FFFFFF"
+            android:textSize="22sp"
+            android:textStyle="bold"
+            android:maxLines="2"
+            android:ellipsize="end"
+            tools:ignore="HardcodedText" />
+
+        <TextView
+            android:id="@+id/video_sub"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:textColor="#CCCCCC"
+            android:textSize="16sp"
+            android:maxLines="1"
+            android:ellipsize="end" />
+    </LinearLayout>
+
+    <!-- 底部进度条 + 时间 -->
+    <LinearLayout
+        android:id="@+id/progress_bar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:orientation="vertical"
+        android:paddingLeft="24dp"
+        android:paddingTop="10dp"
+        android:paddingRight="24dp"
+        android:paddingBottom="16dp"
+        android:background="#A0000000"
+        android:visibility="gone">
+
+        <ProgressBar
+            android:id="@+id/play_progress"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="match_parent"
+            android:layout_height="4dp"
+            android:max="1000"
+            android:progressTint="#E60000"
+            android:progressBackgroundTint="#66FFFFFF" />
+
+        <TextView
+            android:id="@+id/play_time"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:gravity="end"
+            android:textColor="#CCCCCC"
+            android:textSize="14sp" />
+    </LinearLayout>
+
+    <!-- 加载中遮罩 -->
+    <FrameLayout
+        android:id="@+id/loading_panel"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#000000">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:orientation="vertical"
+            android:gravity="center">
+
+            <ProgressBar
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:indeterminate="true" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:text="正在加载推荐视频…"
+                android:textColor="#FFFFFF"
+                android:textSize="18sp" />
+        </LinearLayout>
+    </FrameLayout>
+</FrameLayout>

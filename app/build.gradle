@@ -1,0 +1,45 @@
+plugins { id 'com.android.application' }
+
+android {
+    namespace 'app.breezescreen.tv'
+    compileSdk 36
+
+    defaultConfig {
+        applicationId 'app.breezescreen.tv'
+        minSdk 21
+        targetSdk 36
+        versionCode = (project.findProperty('ciVersionCode') ?: '1').toInteger()
+        versionName = (project.findProperty('ciVersionName') ?: '1.0.0')
+    }
+    buildFeatures { viewBinding true; buildConfig true }
+
+    def signingFile = System.getenv('BREEZESCREEN_KEYSTORE_FILE')
+    def signingStorePassword = System.getenv('BREEZESCREEN_STORE_PASSWORD')
+    def signingKeyAlias = System.getenv('BREEZESCREEN_KEY_ALIAS')
+    def signingKeyPassword = System.getenv('BREEZESCREEN_KEY_PASSWORD')
+    if (signingFile && signingStorePassword && signingKeyAlias && signingKeyPassword) {
+        signingConfigs {
+            release {
+                storeFile file(signingFile)
+                storePassword signingStorePassword
+                keyAlias signingKeyAlias
+                keyPassword signingKeyPassword
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            if (signingFile && signingStorePassword && signingKeyAlias && signingKeyPassword) {
+                signingConfig signingConfigs.release
+            }
+        }
+    }
+}
+
+dependencies {
+    implementation 'androidx.appcompat:appcompat:1.7.0'
+    implementation 'com.google.android.material:material:1.12.0'
+    testImplementation 'junit:junit:4.13.2'
+}

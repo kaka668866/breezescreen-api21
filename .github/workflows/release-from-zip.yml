@@ -1,0 +1,106 @@
+name: Build signed APK and publish release
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_zip:
+        description: "仓库内源码 ZIP 相对路径；留空则构建当前 main 源码"
+        required: false
+        type: string
+      version_tag:
+        description: "发布标签，例如 v1.0.1；留空则自动生成"
+        required: false
+        type: string
+  push:
+    branches: [main]
+    paths:
+      - "**"
+      - "!README.md"
+      - "!docs/**"
+      - "!incoming/*.apk"
+      - "!RELEASE_NOTES.md"
+      - "!.github/workflows/**"
+      - "!incoming/.gitkeep"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    env:
+      BREEZESCREEN_STORE_PASSWORD: ${{ secrets.BREEZESCREEN_STORE_PASSWORD }}
+      BREEZESCREEN_KEY_ALIAS: ${{ secrets.BREEZESCREEN_KEY_ALIAS }}
+      BREEZESCREEN_KEY_PASSWORD: ${{ secrets.BREEZESCREEN_KEY_PASSWORD }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Resolve source package
+        id: source
+        shell: bash
+        run: |
+          set -euo pipefail
+          ZIP="${{ inputs.source_zip }}"
+          if [ -z "$ZIP" ] && [ "${{ github.event_name }}" = "push" ] && git show --pretty="" --name-only "$GITHUB_SHA" | grep -qE '^incoming/.*\.zip$'; then
+            ZIP="$(ls -t incoming/*.zip | head -n 1)"
+          fi
+          if [ -n "$ZIP" ]; then
+            test -f "$ZIP"
+            mkdir -p "$RUNNER_TEMP/source"
+            unzip -q "$ZIP" -d "$RUNNER_TEMP/source"
+            SETTINGS="$(find "$RUNNER_TEMP/source" -maxdepth 4 \( -name settings.gradle -o -name settings.gradle.kts \) -type f | head -n 1)"
+            test -n "$SETTINGS"
+            echo "project_dir=$(dirname "$SETTINGS")" >> "$GITHUB_OUTPUT"
+          else
+            echo "project_dir=$GITHUB_WORKSPACE" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Restore release keystore
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "${{ secrets.BREEZESCREEN_KEYSTORE_BASE64 }}"
+          echo "${{ secrets.BREEZESCREEN_KEYSTORE_BASE64 }}" | base64 --decode > "$RUNNER_TEMP/breezescreen-release.jks"
+          echo "BREEZESCREEN_KEYSTORE_FILE=$RUNNER_TEMP/breezescreen-release.jks" >> "$GITHUB_ENV"
+
+      - name: Verify signing credentials
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp "$RUNNER_TEMP/breezescreen-release.jks" "$RUNNER_TEMP/breezescreen-verify.jks"
+          keytool -keypasswd -keystore "$RUNNER_TEMP/breezescreen-verify.jks" -storepass "$BREEZESCREEN_STORE_PASSWORD" -alias "$BREEZESCREEN_KEY_ALIAS" -keypass "$BREEZESCREEN_KEY_PASSWORD" -new "TemporaryOnly-NotStored-2026" >/dev/null
+          rm -f "$RUNNER_TEMP/breezescreen-verify.jks"
+
+      - name: Build signed release APK
+        id: build
+        working-directory: ${{ steps.source.outputs.project_dir }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          chmod +x ./gradlew
+          TAG="${{ inputs.version_tag }}"
+          if [ -z "$TAG" ]; then TAG="v1.0.${GITHUB_RUN_NUMBER}"; fi
+          VERSION_CODE=$((10000 + GITHUB_RUN_NUMBER))
+          ./gradlew :app:assembleRelease -PciVersionCode="$VERSION_CODE" -PciVersionName="${TAG#v}"
+          APK="$(find app/build/outputs/apk/release -name '*release*.apk' -type f | head -n 1)"
+          test -n "$APK"
+          cp "$APK" "$RUNNER_TEMP/BreezeScreen-API21-${TAG}.apk"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "apk=$RUNNER_TEMP/BreezeScreen-API21-${TAG}.apk" >> "$GITHUB_OUTPUT"
+
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          test -s RELEASE_NOTES.md || { echo "RELEASE_NOTES.md 不存在或为空" >&2; exit 1; }
+          gh release create "${{ steps.build.outputs.tag }}" "${{ steps.build.outputs.apk }}#BreezeScreen API21 signed APK" --title "BreezeScreen API21 ${{ steps.build.outputs.tag }}" --notes-file RELEASE_NOTES.md --latest
